@@ -1,0 +1,93 @@
+; Program random number generator
+; In the PORTC should appear the whole number and in the PORT A and B the most and least significant
+number
+; Port Address of Port A, B and C
+.equ PORTA = $1B ; Port a output address
+.equ PORTB = $18 ; Port b output address
+.equ PORTC = $15 ; Port c output address
+
+; Assign a value, in this case the register 16 will have the number 66 hex
+ldi r16,$66
+
+; To create a loop to repeat 6 times we are going to use 2 loops
+ldi r26,$00 ; When the r26 reaches to the value 6, it stops
+ldi r24,$03 ;Initialise 2nd loop counter
+loop2:
+ldi r25,$02 ;Initialise 1st loop counter
+
+; In this main loop the random numbers will be generatod, each loop is one number
+loop1:
+
+; 2 copies will be created to XOR the number. The original one will be used for OR
+add r17, r16 ; Create a copy
+add r18, r16 ; Create a copy
+lsr r16 ; Move r16 to the right to "OR" later
+lsr r18 ; Move r18 to XOR
+eor r17, r18 ; XOR r18 to r17
+lsl r17 ; Move r17 to the left 7 times so it appears in the 7 bit, last digit (starting right)
+lsl r17
+lsl r17
+lsl r17
+lsl r17
+lsl r17
+lsl r17
+or r16, r17 ; Join the registers in the value r16
+
+; To show the most and least significant digit in PORT A and B, we create 2 copies placing 4 bits in each
+ldi r17, $00 ; Reset the values
+ldi r18, $00
+add r17, r16 ; Put the value of the new number in the register
+add r18, r16 ; Put the value of the new number in the register
+
+; Eliminate the ones in the bits 0,1,2,3
+lsr r17
+lsr r17
+lsr r17
+lsr r17
+lsl r17
+lsl r17
+lsl r17
+lsl r17
+out PORTA, r17 ; Show most significant number in this port
+
+; Eliminate the ones in the bits 4,5,6,7
+lsl r18
+lsl r18
+lsl r18
+lsl r18
+lsr r18
+lsr r18
+lsr r18
+lsr r18
+out PORTB, r18 ; Show least significant number in this port
+out PORTC, r16 ; Show the entire value in PORTC
+ldi r17,$00 ; Reset registers so it does not add with 16 (in the start of the loop)
+ldi r18,$00 ; For example: 03 + B3
+
+; When r26 reaches the value 6, it stops the loop
+inc r26 ;Increment counter
+dec r25 ;Decrement the 1st loop counter
+brne loop1 ;and continue to decrement until 1st loop counter = 0
+dec r24 ;Decrement the 2nd loop counter
+brne loop2 ;If the 2nd loop counter is not equal to zero repeat the 1st loop, else continue
+end: rjmp end
+
+; Registers used:
+; r16 used
+; r17 used
+; r18 used
+; r24 used
+; r25 used
+; r26 used
+
+
+;Explanation of the code:
+;To create the random number, we take the number 66 and make two copies. One copy will be used to
+;move the binary numbers to the right and the other one to XOR. After that, we move 7 times to the
+;right so it should be: 10000000 (with the number 66). Later, the number 66 is shifted to the right and OR
+;with the 10000000. With this we obtain the number B3 and repeat the loop 6 times to obtain 5 numbers
+;more.
+;To display the result in the PORT A and B, we reset the registers that we used for the previous one and
+;get the new value (B3). Each register will have the least or most significant value (r17 and r18). For this,
+;we eliminate the unnecessary digits with the logical shifts right and left to obtain the needed number.
+;Therefore, “out PORT” is used to display the answer in the ports.
